@@ -1,8 +1,7 @@
 import * as core from '@actions/core'
 import got from 'got'
 import {LayoutElement} from './types/layout-blocks'
-import * as CO from './types/composition-objects'
-import * as BE from './types/block-elements'
+import {promises} from 'fs'
 
 enum Env {
   /** Required value to be set by the action user */
@@ -41,6 +40,155 @@ enum Env {
   GITHUB_BASE_REF = 'GITHUB_BASE_REF',
 }
 
+export interface User {
+  email: string
+  name: string
+  username?: string
+}
+
+export interface Commit {
+  author: User
+  committer: User
+  distinct: boolean
+  id: string
+  message: string
+  timestamp: string
+  tree_id: string
+  url: string
+}
+
+export interface EventJson {
+  after: string
+  base_ref: string | null
+  before: string
+  commits: Commit[]
+  compare: string
+  created: boolean
+  deleted: boolean
+  forced: boolean
+  head_commit: Commit
+  pusher: User
+  ref: string
+  repository: {
+    archive_url: string
+    archived: boolean
+    assignees_url: string
+    blobs_url: string
+    branches_url: string
+    clone_url: string
+    collaborators_url: string
+    comments_url: string
+    commits_url: string
+    compare_url: string
+    contents_url: string
+    contributors_url: string
+    created_at: number
+    default_branch: string
+    deployments_url: string
+    description: null
+    disabled: boolean
+    downloads_url: string
+    events_url: string
+    fork: boolean
+    forks: number
+    forks_count: number
+    forks_url: string
+    full_name: string
+    git_commits_url: string
+    git_refs_url: string
+    git_tags_url: string
+    git_url: string
+    has_downloads: true
+    has_issues: true
+    has_pages: boolean
+    has_projects: true
+    has_wiki: true
+    homepage: null
+    hooks_url: string
+    html_url: string
+    id: number
+    issue_comment_url: string
+    issue_events_url: string
+    issues_url: string
+    keys_url: string
+    labels_url: string
+    language: string
+    languages_url: string
+    license: null
+    master_branch: string
+    merges_url: string
+    milestones_url: string
+    mirror_url: null
+    name: string
+    node_id: string
+    notifications_url: string
+    open_issues: number
+    open_issues_count: number
+    owner: {
+      avatar_url: string
+      email: string
+      events_url: string
+      followers_url: string
+      following_url: string
+      gists_url: string
+      gravatar_id: string
+      html_url: string
+      id: number
+      login: string
+      name: string
+      node_id: string
+      organizations_url: string
+      received_events_url: string
+      repos_url: string
+      site_admin: boolean
+      starred_url: string
+      subscriptions_url: string
+      type: string
+      url: string
+    }
+    private: true
+    pulls_url: string
+    pushed_at: number
+    releases_url: string
+    size: number
+    ssh_url: string
+    stargazers: number
+    stargazers_count: number
+    stargazers_url: string
+    statuses_url: string
+    subscribers_url: string
+    subscription_url: string
+    svn_url: string
+    tags_url: string
+    teams_url: string
+    trees_url: string
+    updated_at: string
+    url: string
+    watchers: number
+    watchers_count: number
+  }
+  sender: {
+    avatar_url: string
+    events_url: string
+    followers_url: string
+    following_url: string
+    gists_url: string
+    gravatar_id: string
+    html_url: string
+    id: number
+    login: string
+    node_id: string
+    organizations_url: string
+    received_events_url: string
+    repos_url: string
+    site_admin: boolean
+    starred_url: string
+    subscriptions_url: string
+    type: string
+    url: string
+  }
+}
+
 export type MessagePayload = {
   /** The ID of another un-threaded message to reply to. */
   thread_ts?: string
@@ -59,53 +207,6 @@ export type MessagePayload = {
     }
 )
 
-// interface Webhook {
-//   text: string
-//   userName: string
-//   iconURL: string
-//   iconEmoji: string
-//   channel: string
-//   unfurlLinks: boolean
-//   attachments: Attachment[]
-// }
-
-// interface Attachment {
-//   fallback: string
-//   pretext: string
-//   color: string
-//   authorName: string
-//   authorLink: string
-//   authorIcon: string
-//   footer: string
-//   fields: Field[]
-// }
-
-// interface Field {
-//   title: string
-//   value: string
-//   short: boolean
-// }
-
-// interface Placeholder {
-//   type: 'plain_text'
-//   text: string
-//   emoji?: true
-// }
-
-// type SelectAction =
-//   | {
-//       type: 'conversations_select'
-//       placeholder: Placeholder
-//     }
-//   | {
-//       type: 'channels_select'
-//       placeholder: Placeholder
-//     }
-//   | {
-//       type: 'users_select'
-//       placeholder: Placeholder
-//     }
-
 const send = (endpoint: string, data: MessagePayload) =>
   got(endpoint, {
     body: JSON.stringify(data),
@@ -120,7 +221,13 @@ const run = async () => {
     if (!endpoint) throw new Error('SLACK_WEBHOOK is required')
 
     const eventPath = process.env[Env.GITHUB_EVENT_PATH]
-    if (!eventPath) throw new Error('could not find event path!')
+    if (!eventPath) throw new Error('could not find event path')
+
+    const event = JSON.parse(await promises.readFile(eventPath, 'utf-8')) as EventJson
+
+    if (!event) throw new Error('could not find event data')
+
+    const message = core.getInput('title') || `New event:`
 
     await send(endpoint, {
       blocks: [
@@ -128,7 +235,7 @@ const run = async () => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: 'You have a new request:\n*<fakeLink.toEmployeeProfile.com|Fred Enriquez - New device request>*',
+            text: `${message}\n<${event.compare}|${event.head_commit.committer.name} - ${event.head_commit.message}>`,
           },
         },
         {
@@ -136,7 +243,7 @@ const run = async () => {
           fields: [
             {
               type: 'mrkdwn',
-              text: '*Type:*\nComputer (laptop)',
+              text: `*Type:*${event.compare ? 'Pull Request' : 'Commit'}`,
             },
             {
               type: 'mrkdwn',

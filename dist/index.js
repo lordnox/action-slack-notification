@@ -2054,6 +2054,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const got_1 = __importDefault(__webpack_require__(77));
+const fs_1 = __webpack_require__(747);
 var Env;
 (function (Env) {
     /** Required value to be set by the action user */
@@ -2091,48 +2092,6 @@ var Env;
     /** Only set for forked repositories. The branch of the base repository. */
     Env["GITHUB_BASE_REF"] = "GITHUB_BASE_REF";
 })(Env || (Env = {}));
-// interface Webhook {
-//   text: string
-//   userName: string
-//   iconURL: string
-//   iconEmoji: string
-//   channel: string
-//   unfurlLinks: boolean
-//   attachments: Attachment[]
-// }
-// interface Attachment {
-//   fallback: string
-//   pretext: string
-//   color: string
-//   authorName: string
-//   authorLink: string
-//   authorIcon: string
-//   footer: string
-//   fields: Field[]
-// }
-// interface Field {
-//   title: string
-//   value: string
-//   short: boolean
-// }
-// interface Placeholder {
-//   type: 'plain_text'
-//   text: string
-//   emoji?: true
-// }
-// type SelectAction =
-//   | {
-//       type: 'conversations_select'
-//       placeholder: Placeholder
-//     }
-//   | {
-//       type: 'channels_select'
-//       placeholder: Placeholder
-//     }
-//   | {
-//       type: 'users_select'
-//       placeholder: Placeholder
-//     }
 const send = (endpoint, data) => got_1.default(endpoint, {
     body: JSON.stringify(data),
     method: 'post',
@@ -2145,14 +2104,18 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             throw new Error('SLACK_WEBHOOK is required');
         const eventPath = process.env[Env.GITHUB_EVENT_PATH];
         if (!eventPath)
-            throw new Error('could not find event path!');
+            throw new Error('could not find event path');
+        const event = JSON.parse(yield fs_1.promises.readFile(eventPath, 'utf-8'));
+        if (!event)
+            throw new Error('could not find event data');
+        const message = core.getInput('title') || `New event:`;
         yield send(endpoint, {
             blocks: [
                 {
                     type: 'section',
                     text: {
                         type: 'mrkdwn',
-                        text: 'You have a new request:\n*<fakeLink.toEmployeeProfile.com|Fred Enriquez - New device request>*',
+                        text: `${message}\n<${event.compare}|${event.head_commit.committer.name} - ${event.head_commit.message}>`,
                     },
                 },
                 {
@@ -2160,7 +2123,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     fields: [
                         {
                             type: 'mrkdwn',
-                            text: '*Type:*\nComputer (laptop)',
+                            text: `*Type:*${event.compare ? 'Pull Request' : 'Commit'}`,
                         },
                         {
                             type: 'mrkdwn',
