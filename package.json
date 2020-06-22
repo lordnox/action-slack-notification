@@ -24,7 +24,8 @@
   "author": "Tobias Kopelke",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.2.4"
+    "@actions/core": "^1.2.4",
+    "got": "^11.3.0"
   },
   "devDependencies": {
     "@types/jest": "^26.0.0",
