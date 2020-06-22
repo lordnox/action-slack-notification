@@ -1,5 +1,7 @@
 name: 'Slack Notification'
 description: 'Runs a Slack Notification'
 author: 'Tobias Kopelke'
-runs: using: 'node12'
-main: 'dist/index.js'
+runs:
+  - using: 'node12'
+
+  - main: 'dist/index.js'
