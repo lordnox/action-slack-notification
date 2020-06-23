@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import got from 'got'
 import {LayoutElement} from './types/layout-blocks'
 import {promises} from 'fs'
+import {format} from 'date-fns'
 
 enum Env {
   /** Required value to be set by the action user */
@@ -38,6 +39,34 @@ enum Env {
   GITHUB_HEAD_REF = 'GITHUB_HEAD_REF',
   /** Only set for forked repositories. The branch of the base repository. */
   GITHUB_BASE_REF = 'GITHUB_BASE_REF',
+}
+
+export enum GithubActionEventTypes {
+  check_run = 'Check Run',
+  check_suite = 'Check Suite',
+  create = 'Create',
+  delete = 'Delete',
+  deployment = 'Deployment',
+  deployment_status = 'Deployment Status',
+  fork = 'Fork',
+  gollum = 'Gollum',
+  issue_comment = 'Issue Comment',
+  issues = 'Issues',
+  label = 'Label',
+  milestone = 'Milestone',
+  page_build = 'Page Build',
+  project = 'Project',
+  project_card = 'Project Card',
+  project_column = 'Project Column',
+  public = 'Public',
+  pull_request = 'Pull Request',
+  pull_request_review = 'Pull Request Review',
+  pull_request_review_comment = 'Pull Request Review Comment',
+  push = 'Push',
+  registry_package = 'Registry Package',
+  release = 'Release',
+  status = 'Status',
+  watch = 'Watch',
 }
 
 export interface User {
@@ -229,6 +258,9 @@ const run = async () => {
 
     const message = core.getInput('title') || `New event:`
 
+    const eventName = process.env[Env.GITHUB_EVENT_NAME] as GithubActionEventTypes
+    const eventType = !eventName ? 'Unknown' ? GithubActionEventTypes[eventName]
+
     await send(endpoint, {
       blocks: [
         {
@@ -243,23 +275,15 @@ const run = async () => {
           fields: [
             {
               type: 'mrkdwn',
-              text: `*Type:*${event.compare ? 'Pull Request' : 'Commit'}`,
+              text: `*Type:*\n${eventType}`,
             },
             {
               type: 'mrkdwn',
-              text: '*When:*\nSubmitted Aut 10',
+              text: `*Run:*  ${process.env[Env.GITHUB_RUN_NUMBER]}`,
             },
             {
               type: 'mrkdwn',
-              text: '*Last Update:*\nMar 10, 2015 (3 years, 5 months)',
-            },
-            {
-              type: 'mrkdwn',
-              text: "*Reason:*\nAll vowel keys aren't working.",
-            },
-            {
-              type: 'mrkdwn',
-              text: '*Specs:*\n"Cheetah Pro 15" - Fast, really fast"',
+              text: `*Last Update:*\n${format(new Date(event.head_commit.timestamp), 'H:m d.MMM')}`,
             },
           ],
         },
