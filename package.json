@@ -4,6 +4,7 @@
   "description": "Slack Notification",
   "main": "lib/main.js",
   "scripts": {
+    "prebuild": "rm -rf {dist,lib}",
     "build": "tsc",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
