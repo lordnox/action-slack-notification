@@ -41,32 +41,32 @@ enum Env {
   GITHUB_BASE_REF = 'GITHUB_BASE_REF',
 }
 
-export enum GithubActionEventTypes {
-  check_run = 'Check Run',
-  check_suite = 'Check Suite',
-  create = 'Create',
-  delete = 'Delete',
-  deployment = 'Deployment',
-  deployment_status = 'Deployment Status',
-  fork = 'Fork',
-  gollum = 'Gollum',
-  issue_comment = 'Issue Comment',
-  issues = 'Issues',
-  label = 'Label',
-  milestone = 'Milestone',
-  page_build = 'Page Build',
-  project = 'Project',
-  project_card = 'Project Card',
-  project_column = 'Project Column',
-  public = 'Public',
-  pull_request = 'Pull Request',
-  pull_request_review = 'Pull Request Review',
-  pull_request_review_comment = 'Pull Request Review Comment',
-  push = 'Push',
-  registry_package = 'Registry Package',
-  release = 'Release',
-  status = 'Status',
-  watch = 'Watch',
+export const GithubActionEventTypes = {
+  check_run: 'Check Run',
+  check_suite: 'Check Suite',
+  create: 'Create',
+  delete: 'Delete',
+  deployment: 'Deployment',
+  deployment_status: 'Deployment Status',
+  fork: 'Fork',
+  gollum: 'Gollum',
+  issue_comment: 'Issue Comment',
+  issues: 'Issues',
+  label: 'Label',
+  milestone: 'Milestone',
+  page_build: 'Page Build',
+  project: 'Project',
+  project_card: 'Project Card',
+  project_column: 'Project Column',
+  public: 'Public',
+  pull_request: 'Pull Request',
+  pull_request_review: 'Pull Request Review',
+  pull_request_review_comment: 'Pull Request Review Comment',
+  push: 'Push',
+  registry_package: 'Registry Package',
+  release: 'Release',
+  status: 'Status',
+  watch: 'Watch',
 }
 
 export interface User {
@@ -256,12 +256,12 @@ const run = async () => {
 
     if (!event) throw new Error('could not find event data')
 
-    const message = core.getInput('title') || `New event:`
+    const message = core.getInput('title') || `*New event:*`
 
-    const eventName = process.env[Env.GITHUB_EVENT_NAME] as GithubActionEventTypes
-    const eventType = !eventName ? 'Unknown' ? GithubActionEventTypes[eventName]
+    const eventName = process.env[Env.GITHUB_EVENT_NAME] as keyof typeof GithubActionEventTypes
+    const eventType = !eventName ? 'Unknown' : GithubActionEventTypes[eventName]
 
-    await send(endpoint, {
+    const result = await send(endpoint, {
       blocks: [
         {
           type: 'section',
@@ -279,7 +279,7 @@ const run = async () => {
             },
             {
               type: 'mrkdwn',
-              text: `*Run:*  ${process.env[Env.GITHUB_RUN_NUMBER]}`,
+              text: `*Run:*\n${process.env[Env.GITHUB_RUN_NUMBER]}`,
             },
             {
               type: 'mrkdwn',
