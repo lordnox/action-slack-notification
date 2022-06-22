@@ -38,7 +38,7 @@
   "dependencies": {
     "@actions/core": "^1.2.4",
     "date-fns": "^2.14.0",
-    "got": "^11.3.0"
+    "got": "^11.8.5"
   },
   "devDependencies": {
     "@types/jest": "^26.0.0",
